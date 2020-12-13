@@ -1,0 +1,80 @@
+﻿--12.sequence.sql
+/*
+1. 시퀀스 
+	: 순차적인 순서 번호를 DB 자체가 자동으로 반영할수 있는 매우 유용한 기술
+	: 기본은 1씩 자동 증가
+		- 증가치, 최대값 추가 설정도 가능
+		- 권장 : 하나의 시퀀스를 다수의 table에서 사용 비추
+
+2. 대표적인 활용 영역
+	- 게시물 글번호에 주로 사용
+	- 가입하는 회원수 카운팅 등에도 사용
+
+3. 특징
+	- 이미 생성시킨(증가) 번호는 되돌리지 않음 즉 무조건 증가
+	- 필요시 사용할 경우엔 table에 고유하게 하나씩 권장
+		서로 다른 table 간에 sequence 공유 비추
+
+*/	
+	     
+--1. sequence 생성 명령어
+create sequence seq_test;
+
+--2. seq~를 활용한 insert
+-- no1 컬럼은 db 자체의 기능을 활용해서 자동으로 insert 시 마다 1씩 증가하는 컬럼
+
+drop table test;
+create table test(
+	no1 number(3)
+);
+
+--
+insert into test values(seq_test.nextval);
+
+
+select * from test;
+
+-- 현 시퀀스 데이터값 검증 문장 : currval - current value의 약어
+select seq_test.currval from dual;
+
+
+
+
+
+
+--3. 다수의 table에서 하나의 seq를 공동 사용시?
+create table test3(
+	no1 number(3)
+);
+
+insert into test3 values(seq_test.nextval);
+insert into test values(seq_test.nextval);
+insert into test3 values(seq_test.nextval);
+
+
+select * from test;
+select * from test3;
+
+
+--4. 시작 index 지정 및 증가치도 지정하는 seq 생성 명령어
+-- 1씩 자동증가치가 아닌 10으로 시작해서 2씩 자동 증가 단 최대 20까지만 시퀀스 사용 의미
+-- 속성이 생략될 경우 1씩 자동 증가가 default
+
+drop sequence seq_test_no1;
+create sequence seq_test_no1
+start with 10
+increment by 2
+maxvalue 20;
+
+
+--6. seq 삭제 명령어
+drop sequence seq_test;
+
+--5. 현 sequence의 데이터값 검색하기
+select seq_test.currval from dual;
+
+
+
+ 
+
+
