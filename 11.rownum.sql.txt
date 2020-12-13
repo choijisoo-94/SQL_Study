@@ -1,0 +1,348 @@
+﻿--11.rownum.sql
+
+-- *** rownum
+-- oracle 자체적으로 제공하는 컬럼
+-- table 당 무조건 자동 생성
+-- 검색시 검색된 데이터 순서대로 rownum값 자동 반영(1부터 시작)
+
+-- ROWNUM은 엑세스되는 로우의 번호가 아니라 조건을 만족한 결과에 대한 일련번호
+
+-- order by 절과 혼용해서 개발시에는 논리적인 생각의 결과치와 다르게 출력
+	-- 해결책 : inline 방식의 select 문장
+-- oracle db의 특징
+
+-- *** 인라인 뷰
+	-- 실제 존재하는 table이 아닌 검색된 결과가 마치 실존 table처럼 사용되는 형식
+		(view)
+	-- 검색시 빈번히 활용되는 스펙
+	-- 다수의 글들이 있는 게시판에 필수로 사용(paging 처리)
+	-- 서브쿼리의 일종으로 from절에 위치하여 테이블처럼 사용
+	-- 원리 : sql문 내부에 view를 정의하고 이를 테이블처럼 사용하는 원리
+
+select rownum, empno from emp;
+select rownum, deptno from dept;
+
+
+
+-- 1. ? dept의 deptno를 내림차순(desc)으로 검색, rownum
+select rownum, deptno from dept order by deptno desc;
+select rownum, deptno from dept order by deptno asc;
+
+
+select rownum, deptno from dept;
+
+-- 실행 순서
+-- from -> where -> select절 
+
+--1.
+select rownum, deptno from dept where rownum < 4;
+
+--2.
+select rownum, deptno 
+from (select rownum, deptno 
+	 from dept 
+	 where rownum < 4);
+
+--3.
+select deptno
+from (select rownum, deptno
+	from dept
+	order by deptno desc);
+
+--4. 내림차순
+select rownum, deptno
+from (select rownum, deptno
+	from dept
+	order by deptno desc);
+
+--5. 오름차순
+select rownum, deptno
+from (select rownum, deptno
+	from dept
+	order by deptno asc);
+
+-- 6. rownum 을 제대로 사용을 위해서는 정렬이 필요한 경우에 inline 방식으로
+-- 이미 정렬된 데이터 구조를 생성 후에 생성된 데이터에서  where 조건문으로
+-- 조건에 맞춰 검색 
+select rownum, deptno
+from (select rownum, deptno
+		from dept
+		order by deptno asc)
+where rownum < 3;
+
+
+select rownum, deptno
+from (select rownum, deptno
+		from dept
+		order by deptno asc);
+
+
+
+
+
+-- 김재웅씨 작품
+
+select rn, deptno
+from (select rownum as rn, deptno
+		from dept)
+where rn=2;
+/*
+       RN     DEPTNO
+---------- ----------
+         2         20
+*/
+
+-- 실행 순서 : from -> where -> select 
+/*
+from절 내의  inline의 rownum은 dept의 검색 결과에 순번 적용
+select절의 rownum은 from 절 검색 결과의 순번 따라서 select 보다 우선실행되는
+where  절에선 rownum 값 비교 의미 없음
+*/
+select rownum, deptno
+from (select rownum, deptno
+		from dept)
+where rownum=2;
+-- no rows selected
+
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept)
+where rn=2;
+/*
+    ROWNUM         RN     DEPTNO
+---------- ---------- ----------
+         1          2         20
+*/
+
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept)
+where rownum = 2;
+-- no rows selected
+
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept)
+where rownum > 2;
+-- no rows selected
+
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept 
+		order by deptno asc)
+where rownum > 2;
+-- no rows selected
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept 
+		order by deptno asc)
+where rn > 2;
+/*
+    ROWNUM         RN     DEPTNO
+---------- ---------- ----------
+         1          3         30
+         2          4         40
+
+*/
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept 
+		order by deptno asc);
+/*
+   ROWNUM         RN     DEPTNO
+---------- ---------- ----------
+         1          1         10
+         2          2         20
+         3          3         30
+         4          4         40
+*/	
+
+
+
+select rownum, rn, deptno
+from (select rownum as rn, deptno
+		from dept 
+		order by deptno asc)
+where rownum < 5;
+/*
+  ROWNUM         RN     DEPTNO
+---------- ---------- ----------
+         1          1         10
+         2          2         20
+         3          3         30
+         4          4         40
+
+*/
+
+
+select rownum, deptno
+		from dept
+		order by deptno asc;
+/*
+   ROWNUM     DEPTNO
+---------- ----------
+         1         10
+         2         20
+         3         30
+         4         40
+*/
+
+
+
+select rownum, deptno
+from (select rownum, deptno
+		from dept
+		order by deptno asc)
+where rownum < 3;
+/*
+   ROWNUM     DEPTNO
+---------- ----------
+         1         10
+         2         20
+*/
+
+select rownum, deptno
+from (select rownum, deptno
+		from dept
+		order by deptno asc);
+/*
+   ROWNUM     DEPTNO
+---------- ----------
+         1         10
+         2         20
+         3         30
+         4         40
+*/
+
+
+--  ----------------------
+
+
+-- 정상 실행되는 듯한 문장처럼 보이나, order by절과 where 동시에 사용시 rownum 문제 있음
+-- 실행순서 : from -> where -> select절 -> order by절
+select rownum, deptno 
+from dept 
+where rownum = 1
+order by deptno desc;
+
+select rownum, deptno 
+from dept 
+where rownum = 1
+order by deptno asc;
+
+
+-- 결과 안 나옴
+select rownum, deptno 
+from dept 
+where rownum = 2
+order by deptno desc;
+
+select rownum, deptno 
+from dept 
+where rownum > 3
+order by deptno desc;
+
+select rownum, deptno 
+from dept 
+where rownum >= 3
+order by deptno desc;
+
+
+
+-- 2. ? dept의 deptno의 값이 오름차순으로 정렬해서 30번 까지만 검색, rownum 포함해서 검색
+
+select * from dept;
+
+-- 논리적 오류 찾기!!
+select rownum, deptno
+from dept
+where rownum <= 3;
+order by deptno asc;
+
+-- 모범답안
+select rownum, deptno
+from (select deptno 
+from dept order by deptno asc)
+where rownum <= 3;
+
+
+-- 이해를 위한 단계별 실습 예제
+
+select deptno from emp;
+select rownum, deptno from emp;
+
+select rownum, deptno from emp order by deptno asc;
+
+select rownum, deptno
+from emp
+where rownum <= 5
+order by deptno asc;
+
+-- 모범답안 : emp의 부서 번호를 오름차순으로 정렬후에 3개만 검색
+select rownum, deptno
+from (
+	select deptno
+	from emp order by deptno asc)
+where rownum <= 3;
+
+
+-- 3. ? emp의 deptno의 값이 오름차순으로 정렬해서 상위 3개의 데이터만 검색, rownum 포함해서 검색
+select rownum, 
+
+select rownum, deptno
+from (select deptno 
+from dept order by deptno asc)
+where rownum <= 3;
+
+
+-- 4.  ?인라인 뷰를 사용하여 급여(sal)를 많이 받는 순서대로 3명만 이름과 급여 검색 
+select ename, sal
+from (select ename, sal from emp order by sal desc)
+where rownum <= 3;
+
+-- 오류 : from 절의 table에는 ename이 없음 따라서 이름 검색 불가
+select ename, sal
+from (select sal from emp order by sal desc)
+where rownum <= 3;
+
+
+select rownum, deptno from emp order by deptno asc;
+/*
+    ROWNUM     DEPTNO
+---------- ----------
+         8         10
+         7         10
+        12         10
+        11         20
+         1         20
+         4         20
+        10         30
+         9         30
+         5         30
+         3         30
+         2         30
+         6         30
+*/
+
+
+select rownum, deptno
+ from (select rownum, deptno from emp order by deptno asc);
+
+select rownum, deptno
+from(select rownum, deptno
+from emp
+order by deptno asc)
+where rownum < 6;
+
+select rownum, rn, ename, sal
+from ( 
+	select rownum rn, sal, ename
+	from emp
+	order by sal desc)
+where rownum <= 3;
