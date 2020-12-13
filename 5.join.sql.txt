@@ -1,0 +1,442 @@
+-- 5.join.sql
+
+/*
+1. 조인이란?
+	다수의 table간에  공통된 데이터를 기준으로 검색하는 명령어
+	다수의 table이란?
+		동일한 table을 논리적으로 다수의 table로 간주
+			- self join
+		물리적으로 다른 table간의 조인
+
+2. 사용 table 
+	1. emp & dept 
+	  : deptno 컬럼을 기준으로 연관되어 있음
+
+	 2. emp & salgrade
+	  : sal 컬럼을 기준으로 연관되어 있음
+
+  
+3. table에 별칭 사용 
+	검색시 다중 table의 컬럼명이 다를 경우 table별칭 사용 불필요, 
+	서로 다른 table간의 컬럼명이 중복된 경우,
+	컬럼 구분을 위해 오라클 엔진에게 정확한 table 소속명을 알려줘야 함
+	- table명 또는 table별칭
+	- 주의사항 : 컬럼별칭 as[옵션], table별칭 as 사용 불가
+
+
+4. 조인 종류 
+	1. 동등 조인
+		 = 동등비교 연산자 사용
+		 : 사용 빈도 가장 높음
+		 : 테이블에서 같은 조건이 존재할 경우의 값 검색 
+		 : 100% 동일한 데이터를 기준으로 검색
+
+	2. not-equi 조인
+		: = 연산식 사용 불가
+		: 100% 일치하지 않고 특정 범위내의 데이터 조인시에 사용
+		: between ~ and(비교 연산자)
+
+	3. self 조인 
+		: 동일 테이블 내에서 진행되는 조인
+		: 동일 테이블 내에서 상이한 칼럼 참조
+			emp의 empno[사번]과 mgr[사번] 관계
+
+	4. outer 조인 
+		: 두개 이상의 테이블이 조인될때 특정 데이터가 모든 테이블에 존재하지 않고 컬럼은 존재하나 null값을 보유한 경우
+		  검색되지 않는 문제를 해결하기 위해 사용되는 조인
+		  null 값이기 때문에 배제된 행을 결과에 포함 할 수 있드며 (+) 기호를 조인 조건에서 정보가 부족한 컬럼쪽에 적용
+		
+		: oracle DB의 sql인 경우 데이터가 null 쪽 table 에 + 기호 표기 */
+
+-- 1. dept table의 구조 검색
+desc dept;
+-- dept, emp, salgrade table의 모든 데이터 검색
+select * from dept;
+select * from emp;
+select * from salgrade;
+
+
+
+
+
+
+--*** 1. 동등 조인 ***
+-- = 동등 비교
+-- 2. SMITH 의 이름(ename), 사번(empno), 근무지역(부서위치)(loc) 정보를 검색
+-- emp : ename, empno
+-- deptno : loc
+/* 두개의 상이한 table / 공통 데이터(기준) : deptno
+	조건 : SMITH
+	검색 컬럼은 중복된 컬럼을 요하지는 않음
+*/
+
+select ename, empno, loc
+from emp, dept
+where ename = 'SMITH' and emp.deptno=dept.deptno;
+
+-- 3. deptno가 동일한 모든 데이터(*) 검색
+-- 문법적으로는 허용이 되나 논리적으로는 의미가 없는 검색 syntax
+-- emp & dept 
+select *
+from emp, dept;
+
+
+-- 4. 2+3 번 항목 결합해서 SMITH에 대한 모든 정보(ename, empno, sal, comm, deptno, loc) 검색하기
+/*
+고려사항 : deptno는 두개의 table에 중복
+			검색시에 deptno가 emp? dept? 에서 검색
+해결책 : 중복되는 컬럼에 table 명시 또는 table의 별칭 명시
+*/
+select ename, empno, sal, comm, dept.deptno, loc
+from emp, dept
+where ename='SMITH' and emp.deptno=dept.deptno;
+
+-- table 의 별칭 활용
+select ename, empno, sal, comm, dept.deptno, loc
+from emp e, dept
+where ename='SMITH' and emp.deptno=dept.deptno;
+
+-- deptno가 두번 검색
+select *
+from emp e, dept
+where ename='SMITH' and emp.deptno=dept.deptno;
+*/
+
+
+-- 5.  SMITH에 대한 이름(ename)과 부서번호(deptno), 부서명(dept의 dname) 검색하기
+select ename, emp.deptno, dname
+from emp e, dept
+where ename = 'SMITH' and e.deptno=dept.deptno;
+
+-- 6. 조인을 사용해서 뉴욕에 근무하는 사원의 이름과 급여를 검색 
+-- loc='NEW YORK', ename, sal
+
+select loc from dept;
+
+-- 두번째 문장보다 더 선호
+select ename, sal
+from emp, dept
+where loc = 'NEW YORK' and emp.deptno=dept.deptno;
+
+select ename, sal
+from emp, dept
+where emp.deptno=dept.deptno and loc = 'NEW YORK';
+
+
+-- 7. 조인 사용해서 ACCOUNTING 부서(dname)에 소속된 사원의 이름(ename)과 입사일 검색
+select ename, hiredate
+from emp, dept
+where dname = 'ACCOUNTING' and dept.deptno = emp.deptno;
+
+
+-- 8. 직급이 MANAGER인 사원의 이름, 부서명 검색
+select ename, dname
+from emp, dept
+where job = 'MANAGER' and emp.deptno = dept.deptno;
+
+-- 9. ? 미션 : 아정씨와 희성씨를 위한 동등조인 문제 1문제씩 제시하기 - 10분
+-- 희성씨와 아정씨는 업로드되는 문제에서 각자 2문제 선별() - 5분
+-- 다른 분들이 풀기 : 희성씨와 아정씨가 풀이시간 제시 : 6분
+
+-- 81년 4월 1일 이후에 입사한 사원들이 가장 많은 부서의 부서명을 구하세요.
+-- 다영씨 작품
+-- dname의 개수를 카운팅해서 max 최대값 
+-- ??? 보장 불가
+select max(dname)
+from emp, dept
+where hiredate > '81/04/01' and emp.deptno = dept.deptno;
+
+-- 단계별 풀이 방식
+/* 
+subquery : select절 내부에 select절
+inline : from 절에 select 문장의 결과를 동적으로 적용하는 기술
+*/
+select hiredate from emp;
+select hiredate from emp where hiredate > '81/04/01';
+
+select deptno, hiredate from emp
+where hiredate in (select hiredate from emp where hiredate > '81/04/01');
+
+select deptno from emp
+where hiredate in (select hiredate from emp where hiredate > '81/04/01');
+
+-- group by 절 사용 : 집계함수 사용시 
+select deptno, count(deptno) from emp
+where hiredate in (select hiredate from emp where hiredate > '81/04/01')
+group by deptno;
+
+
+-- inline 방식의 subquery 사용
+select deptno, count
+from (select deptno, count(deptno) as count 
+		from emp
+		where hiredate in (select hiredate from emp where hiredate > '81/04/01')
+		group by deptno);
+
+
+-- 부서별 최대값 보유한 count값만 출력 
+select max(count)
+from (select deptno, count(deptno) as count 
+	from emp
+	where hiredate in(select hiredate from emp where hiredate > '81/04/01')
+	group by deptno);
+
+
+-- 민건씨 질문의 해결책 : select 의 max(count(deptno)) 영역 문법 오류는 
+	select max(count(deptno))
+	from (select deptno, count(deptno))
+	from emp
+	where hiredate in(selecct hiredate from emp where hiredate > '81/04/01')
+	group by deptno)
+	group by deptno;
+
+
+-- 최태열 씨 작품
+select *
+from(
+	select dname
+	from hiredate > '81/04/01' and emp.deptno=dept.deptno
+	group by dname
+	order by count(ename) desc)
+	where ROWNUM=1;
+)
+
+-- 최태열씨 문제 내가 푼 부분
+1. select ename
+	from emp, dept
+	where job='CLERK' and loc='NEW YORK' and emp.deptno=dept.deptno;
+
+2. select ename, job, dname, loc
+	from emp, dept
+	where ename = 'ALLEN' and emp.deptno=dept.deptno;
+
+-- *** 2. not-equi 조인 ***
+
+-- salgrade table(급여 등급 관련 table)
+-- 9. 사원의 급여가 몇 등급인지 검색
+-- between ~ and : 포함 
+select ename, sal, grade
+from emp, salgrade
+where sal between losal and hisal;
+
+
+-- 동등조인 문제
+-- 10. 사원(emp) 테이블의 부서 번호(deptno)로 부서 테이블을 참조하여 사원명, 부서번호, 부서의 이름(dname) 검색
+select ename, emp.deptno, dname
+from emp, dept
+where emp.deptno=dept.deptno;
+
+
+-- *** 3. self 조인 ***
+/*
+self 조인 : 하나의 table 에서 조인하는 상황을 의미
+해결책 : table 은 하나하나 논리적으로 여러개인듯 하게 연출해서 해결
+-- 11. SMITH 직원의 메니저 이름 검색
+select m.ename
+from emp e, emp m
+where e.ename='SMITH' and e.mgr=m.empno;
+
+
+
+-- 12. 메니저 이름이 KING(m ename='KING')인 사원들의 이름(e ename)과 직무(e job) 검색
+/*emp m : 매니저 table
+			매니저 이름이 KING (m ename = 'KING')
+ emp e : 사원 table
+			사원들의 이름, 직무
+*/
+select e.ename, e.job
+from emp e, emp m
+where m.ename = 'KING' and e.mgr=m.empno;
+
+select e.ename, e.job, m.ename
+from emp e, emp m
+where m.ename = 'KING' and e.mgr=m.empno;
+
+select e.ename, e.mgr, m.empno,e.job, m.ename
+from emp e, emp m
+where m.ename = 'KING' and e.mgr=m.empno;
+
+-- 13. SMITH와 동일한 근무지(my.deptno = you.deptno)에서 근무하는 사원의 이름 검색
+-- SMITH 이름은 절대 검색 금지
+select you.ename
+from emp my, emp you
+where e.ename = 'SMITH' and my.deptno=you.deptno;
+
+select you.ename
+from emp my, emp you
+where e.ename = 'SMITH' and my.deptno=you.deptno
+	and you.ename != 'SMITH';
+
+select you.ename
+from emp my, emp you
+where e.ename = 'SMITH' and my.deptno=you.deptno;
+	and not you.ename = 'SMITH';
+
+
+-- 연습용
+select a.ename
+from emp a, emp b, dept c
+where a.deptno=b.deptno and b.ename = 'SMITH'
+and b.deptno = c.deptno and a.ename <> 'SMITH';
+
+select ename , loc from emp, dept
+where loc = (select loc from emp, dept
+where ename = 'SMITH' and emp.deptno = dept.deptno) and ename !='SMITH';
+
+
+--*** 4. outer join ***
+-- 14. 모든 사원명, 메니저 명 검색,/ 단 메니저가 없는 사원도 검색되어야 함
+
+/* emp table에는 모든 사원명 존재(KING 포함)
+emp table 에는 mgr 컬럼 존재
+KING 을 제외한 
+모든 사원의 mgr 값은 상사 table의 사번과 일치
+= 사원들의 상사 번호(mgr)는 상사 table 의 사원번호(empno)로 존재
+
+KING의 mgr(null)값이 상사 table 사번에 미존재
+
+데이터가 있다 없다(표기만으로도 데이터 표현) 관점에선 null에 해당하는 상사 table의 사번 미존재
+데이터 없는 쪽에 상사 table 의 사번
+이곳에 + 기호 적용해서 결과 출력
+*/
+
+select e.ename 사원명, m.ename 매니저명
+from emp e, emp m
+where e.mgr = m.empno;
+
+
+select e.ename 사원명, m.ename 매니저명
+from emp e, emp m
+where e.mgr = m.empno(+);
+
+select e.ename 사원명, m.ename 매니저명
+from emp e, emp m
+where e.mgr(+) = m.empno;	
+	
+
+-- 15. 모든 직원명(ename), 부서번호(deptno), 부서명(dname) 검색
+-- 부서 테이블의 40번 부서와 조인할 사원 테이블의 부서 번호가 없지만,
+-- outer join이용해서 40번 부서의 부서 이름도 검색하기 
+-- 40번 번호가 없는 table의 칼럼은? emp table 의 deptno는 없음
+select ename, dept.deptno, dname
+from emp, dept
+where emp.deptno(+)=dept.deptno;
+
+select ename, emp.deptno, dname
+from emp, dept
+where emp.deptno(+)=dept.deptno;
+
+
+-- *** hr/hr 계정에서 test 
+--16. 직원의 이름과 직책(job_title)을 출력(검색)
+--	단, 사용되지 않는 직책이 있다면 그 직책이 정보도 검색에 포함
+--     검색 정보 이름(2개)들과 job_title(직책) 
+
+	-- 문제 풀이를 위한 table의 컬럼값들 확인해 보기
+-- 탐색 단계
+
+--desc로 job_title이 어떤 table에 포함되어 있는지 확인
+
+desc employees;
+desc jobs;
+
+-- employees 와 jobs의 table 관계도 확인, 데이터 확인
+select count(*) from employees; -- 직원수 확인
+select * from jobs; -- 19개의 job_id 보유 확인
+
+-- 회사내에 존재하는 모든 job 을 수행하는 직원들 존재
+select job_id from employees;
+select distinct job_id from employees;
+
+select first_name, job_title
+from employees e, jobs j
+where e.job_id = j.job_id;
+
+ select distinct job_id from employees;
+
+--17. 직원들의 이름(first_name), 입사일, 부서명(department_name) 검색하기
+desc employees;
+select * from tab;
+desc departments; -- DEPARTMENT_ID 확인
+-- 두개의 테이블 간의 관계 컬럼 도출 - DEPARTMENT_ID
+
+select first_name, hire_date, department_name
+from employees e, departments d
+where e.department_id = d.department_id(+);
+
+
+
+-- 단, 부서가 없는 직원이 있다면 그 직원 정보도 검색에 포함시키기
+/* 5분 중 한분만 명쾌한 답안 업로드 해 주세요. 5분 이내로!
+
+
+-- 아정씨 작품
+select first_name, hire_date, department_name
+from employees e, departments d
+where e.department_id = d.department_id(+);
+
+select count(*) from employees;
+select count(department_id) from employees;
+select * from departments;
+
+select count(distinct department_name) from departments;
+
+select count(distinct department_id) from employees;
+
+-- 106명의 직원은 27개의 부서 중에 11개의 부서에만 소속
+
+-- 직원수는 107명 중 106만 부서에 소속, 검색 요청한 내용은 모든 직원들 정보도 검색
+
+-- department_id 가 없는 테이블은?
+-- departments : department_id 가 27개, employees : department_id 가 11개
+
+select department_id, first_name from employees;
+-- Kimberely 이름의 사원의 department_id 자체가 null 이다 검색 결과
+-- null 이 존재 (employees의 department_id), null 가 미존재 (department의 department_id) 결론 : 데이터 표현이 부족한 쪽은 department
+-- null 이 미존재(department 의 department_name)
+-- 결론 : 데이터 표현이 부족한 쪽은 department
+
+select first_name, hire_date, department_name
+from employees e, departments d
+
+
+-- 코딩대회를 여는 상황..
+
+출전하기 위해 제출해야 하는 서류는 당사자 이름(NAME) 과 담당 교수의 번호이다.
+
+모든 선수들이 명단을 제출하였다.
+
+서류를 검토하고 등록을 하는 와중 코딩대회를 출전하지 못하는 친구들이 발생하게 되었다.
+
+그 친구들의 명단 목록(NAME)과 학번(SNUMBER), 학과(DEPARTMENT) 를 출력하라. 
+
+단, 담당 교수들이 없어 출전 보류가 되고 있는 명단을 모두 출력하라.
+
+select s.name, s.number, department, p.name
+from student s, professor p
+where s.pnumber(+) = p.number;
+
+
+
+
+최종 우승을 가리는 자리에 차왕현 선수와 김혜경 선수가 결승에 올라왔다.
+감독관은 
+
+-- 중간고사가 끝났다. 
+
+	중간고사 성적의 결과를 가지고 다음 학기의 재수강 여부가 결정이 난다.
+
+	A학점부터 F학점까지 점수를 받을 수 있는데 D학점과 F학점은 무조건 재수강을
+	
+	하여야 한다.
+
+	재수강을 들으려면 담당 교수님께 신청을 하러 찾아가면 된다. 
+
+	재수강 명단 목록(NAME)과 담당 교수님 이름(PROPESSOR), 해당 교수 번호(PNUMBER) 를 출력하라.
+
+	단, 담당 교수가 존재하지 않아서 재수강 신청이 어려운 명단을 모두 출력하라.
+
+select s.name, p.professor, p.pnumber
+from student s, professor p
+where s.pnumber(+) = p.pnumber;
+
